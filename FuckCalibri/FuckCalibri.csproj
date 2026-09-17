@@ -1,23 +1,47 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net46</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-	<LangVersion>latest</LangVersion>
-	<VersionPrefix>1.0.2</VersionPrefix>
-	<VersionSuffix></VersionSuffix>
-	<EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
-	<ApplicationIcon>Resources\fuckcalibri-blue.ico</ApplicationIcon>
-	<AssemblyName>FuckCalibri.net-v$(VersionPrefix)</AssemblyName>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <VersionPrefix>2.0.0</VersionPrefix>
+    <ApplicationIcon>Resources\fuckcalibri-green.ico</ApplicationIcon>
+    <AssemblyName>FuckCalibri</AssemblyName>
+    <RootNamespace>FuckCalibri</RootNamespace>
+
+    <!-- 默认采用单文件独立编译输出 (Single-File Compilation) -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\*.ico" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\*.ico" />
+    <Resource Include="Resources\*.ico" />
+  </ItemGroup>
+
+  <!-- 排除原有老旧 WinForms 与旧版业务逻辑文件 -->
+  <ItemGroup>
+    <Compile Remove="MainFrom.cs" />
+    <Compile Remove="MainFrom.Designer.cs" />
+    <Compile Remove="CustomApplicationContext.cs" />
+    <Compile Remove="Program.cs" />
+    <Compile Remove="OnenoteMemoryPatcher.cs" />
+    <EmbeddedResource Remove="MainFrom.resx" />
+    <None Remove="MainFrom.cs" />
+    <None Remove="MainFrom.Designer.cs" />
+    <None Remove="CustomApplicationContext.cs" />
+    <None Remove="Program.cs" />
+    <None Remove="OnenoteMemoryPatcher.cs" />
+    <None Remove="MainFrom.resx" />
   </ItemGroup>
 
 </Project>

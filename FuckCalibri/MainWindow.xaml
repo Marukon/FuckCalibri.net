@@ -1,0 +1,535 @@
+<ui:FluentWindow x:Class="FuckCalibri.MainWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                  xmlns:tb="http://www.hardcodet.net/taskbar"
+                  Title="FuckCalibri.net"
+                  Height="680"
+                  Width="580"
+                  MinHeight="580"
+                  MinWidth="500"
+                  WindowStartupLocation="CenterScreen"
+                  WindowBackdropType="None"
+                  Background="#F1F5F9"
+                  ExtendsContentIntoTitleBar="True">
+
+    <Grid Background="#F1F5F9">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 现代化 Fluent 标题栏 -->
+        <ui:TitleBar Grid.Row="0"
+                     Title="FuckCalibri.net"
+                     Icon="pack://application:,,,/Resources/fuckcalibri-green.ico" />
+
+        <!-- 任务栏托盘图标 -->
+        <tb:TaskbarIcon x:Name="TrayIcon"
+                        ToolTipText="FuckCalibri.net - OneNote Calibri 拦截工具"
+                        TrayMouseDoubleClick="OnTrayDoubleClicked"
+                        TrayLeftMouseDown="OnTrayLeftMouseDown">
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu x:Name="TrayContextMenu"
+                             BorderThickness="1"
+                             Padding="6,8"
+                             HasDropShadow="True"
+                             Opened="OnTrayContextMenuOpened">
+                    <MenuItem Header="显示主界面" Click="OnShowMainWindowClicked">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Window24" FontSize="16" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="启动 / 唤醒 OneNote" Click="OnLaunchOneNoteClicked">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Play24" FontSize="16" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="重新检测补丁" Click="OnRescanClicked">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="ArrowClockwise24" FontSize="16" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator Margin="0,4,0,4" />
+                    <MenuItem x:Name="MenuAutoStart" Header="开机自启动" IsCheckable="True" Click="OnToggleAutoStartMenuClicked" />
+                    <Separator Margin="0,4,0,4" />
+                    <MenuItem Header="退出程序" Click="OnExitAppClicked">
+                        <MenuItem.Icon>
+                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="16" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+        </tb:TaskbarIcon>
+
+        <!-- 主内容区域：保持原版的单列纵向主体结构，层次分明 -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,4,16,10">
+            <StackPanel>
+
+                <!-- 模块 1: 当前状态 (对应原版顶部状态区，升级为彩色 ✅ / ⚪ 与指标卡片) -->
+                <Border Background="#FFFFFF"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="14"
+                        Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- 状态卡片顶栏：左侧标题，右侧操作按钮 -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="当前状态："
+                                           FontSize="13.5"
+                                           FontWeight="Bold"
+                                           Foreground="#334155"
+                                           VerticalAlignment="Center" />
+                                <Border x:Name="TagRealtimeProtect"
+                                        Background="#DCFCE7"
+                                        CornerRadius="5"
+                                        Padding="8,2"
+                                        Margin="6,0,0,0">
+                                    <TextBlock x:Name="TxtRealtimeProtect"
+                                               Text="✔ 实时拦截已就绪"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="#15803D" />
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="🔄 检测"
+                                        Background="#F8FAFC"
+                                        BorderBrush="#CBD5E1"
+                                        BorderThickness="1"
+                                        Padding="10,4"
+                                        FontSize="12"
+                                        FontWeight="Medium"
+                                        Cursor="Hand"
+                                        Click="OnRescanClicked"
+                                        Margin="0,0,6,0">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="5" />
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+
+                                <Button Content="🚀 启动 OneNote"
+                                        Background="#0066CC"
+                                        Foreground="#FFFFFF"
+                                        BorderThickness="0"
+                                        Padding="12,4"
+                                        FontSize="12"
+                                        FontWeight="SemiBold"
+                                        Cursor="Hand"
+                                        Click="OnLaunchOneNoteClicked">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="5" />
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 状态主显示条 (深层底色卡片) -->
+                        <Border Grid.Row="1"
+                                Background="#F8FAFC"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="12,10"
+                                Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock x:Name="TxtStatusBadgeIcon"
+                                           Grid.Column="0"
+                                           Text="✅"
+                                           FontSize="28"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,12,0" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,3">
+                                        <TextBlock x:Name="TxtStatusTitle"
+                                                   Text="OneNote 桌面版已启动 (已生效)"
+                                                   FontSize="14.5"
+                                                   FontWeight="Bold"
+                                                   Foreground="#0F172A"
+                                                   Margin="0,0,8,0" />
+                                        <Border x:Name="BadgePillPatched"
+                                                Background="#DCFCE7"
+                                                CornerRadius="8"
+                                                Padding="6,2"
+                                                VerticalAlignment="Center">
+                                            <TextBlock x:Name="TxtBadgeCount"
+                                                       Text="有效保护 9 处特征码"
+                                                       Foreground="#15803D"
+                                                       FontSize="11"
+                                                       FontWeight="Bold" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock x:Name="TxtStatusSubtitle"
+                                               Text="OneNote 强制 Calibri 字体回退逻辑已被精准拦截。"
+                                               FontSize="11.5"
+                                               Foreground="#475569" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- 状态核心参数详细条 -->
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock Text="目标：" Foreground="#64748B" FontSize="11.5" />
+                                <TextBlock x:Name="TxtMetricProcess" Text="ONENOTE.EXE" FontWeight="Medium" Foreground="#334155" FontSize="11.5" Margin="0,0,8,0" />
+                                <TextBlock Text="模块：" Foreground="#64748B" FontSize="11.5" />
+                                <TextBlock x:Name="TxtMetricModule" Text="onmain.dll" FontWeight="Medium" Foreground="#334155" FontSize="11.5" Margin="0,0,8,0" />
+                                <TextBlock x:Name="TxtMetricPatched" Text="9 处特征已修补" FontWeight="SemiBold" Foreground="#15803D" FontSize="11.5" Margin="0,0,8,0" />
+                                <TextBlock x:Name="TxtMetricMode" Text="方案 A" Visibility="Collapsed" />
+                            </StackPanel>
+                            <TextBlock x:Name="TxtProcessPidTag" Grid.Column="1" Text="PID: 20332 (64位)" FontSize="11" Foreground="#94A3B8" />
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 模块 2: 方案选择与偏好设置 (保留原有功能，层次丰富清晰) -->
+                <Border Background="#FFFFFF"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="14"
+                        Margin="0,0,0,10">
+                    <StackPanel>
+                        <!-- 方案选择标题 -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="OneNote 拦截方案"
+                                       FontSize="13.5"
+                                       FontWeight="Bold"
+                                       Foreground="#334155"
+                                       VerticalAlignment="Center" />
+                            <Border x:Name="PillTopActiveMode" Grid.Column="1" Background="#EFF6FF" CornerRadius="4" Padding="6,2">
+                                <TextBlock x:Name="TxtTopActiveMode" Text="⚡ 方案 A 生效中" FontSize="11" Foreground="#1D4ED8" FontWeight="SemiBold" />
+                            </Border>
+                        </Grid>
+
+                        <!-- 方案 A 选择卡片 (默认 · 推荐) -->
+                        <Border x:Name="CardSchemeA"
+                                Background="#F8FAFC"
+                                BorderBrush="#2563EB"
+                                BorderThickness="1.5"
+                                CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,0,0,6"
+                                Cursor="Hand"
+                                MouseLeftButtonDown="OnSelectSchemeAClicked">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <RadioButton x:Name="RadioSchemeA"
+                                             Grid.Column="0"
+                                             GroupName="MonitoringScheme"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,8,0"
+                                             Click="OnRadioSchemeAClicked" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="方案 A：窗口事件监听模式"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#0F172A" />
+                                    <TextBlock Text="基于 Win32 ShellHook 监听 OneNote 窗体创建，启动瞬间毫秒级自动触发，平时零后台开销。"
+                                               FontSize="11"
+                                               Foreground="#64748B"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,0" />
+                                </StackPanel>
+
+                                <Border Grid.Column="2"
+                                        Background="#DCFCE7"
+                                        CornerRadius="4"
+                                        Padding="6,2"
+                                        VerticalAlignment="Center"
+                                        Margin="6,0,0,0">
+                                    <TextBlock Text="推荐 · 默认"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#15803D" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- 方案 B 选择卡片 (定时轮询) -->
+                        <Border x:Name="CardSchemeB"
+                                Background="#F8FAFC"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,0,0,12"
+                                Cursor="Hand"
+                                MouseLeftButtonDown="OnSelectSchemeBClicked">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <RadioButton x:Name="RadioSchemeB"
+                                             Grid.Column="0"
+                                             GroupName="MonitoringScheme"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,8,0"
+                                             Click="OnRadioSchemeBClicked" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="方案 B：后台周期定时轮询模式"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#0F172A" />
+                                    <TextBlock Text="每隔 1.5 秒低开销轮询系统进程快照。兼容无窗口的后台静默同步等特殊环境。"
+                                               FontSize="11"
+                                               Foreground="#64748B"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,0" />
+                                </StackPanel>
+
+                                <Border Grid.Column="2"
+                                        Background="#F1F5F9"
+                                        CornerRadius="4"
+                                        Padding="6,2"
+                                        VerticalAlignment="Center"
+                                        Margin="6,0,0,0">
+                                    <TextBlock Text="1.5秒轮询"
+                                               FontSize="11"
+                                               FontWeight="Medium"
+                                               Foreground="#64748B" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- 偏好设置项分割线与标题 -->
+                        <TextBlock Text="常驻与启动偏好"
+                                   FontSize="13.5"
+                                   FontWeight="Bold"
+                                   Foreground="#334155"
+                                   Margin="0,0,0,8" />
+
+                        <!-- 设置项 1: 开机自启动 -->
+                        <Border Background="#F8FAFC"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,0,0,6"
+                                Cursor="Hand"
+                                MouseLeftButtonDown="OnToggleAutoStartClicked">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox x:Name="ChkAutoStart"
+                                          Grid.Column="0"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,8,0"
+                                          Click="OnChkAutoStartClicked" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="开机自动启动 (后台常驻)"
+                                               FontSize="13"
+                                               FontWeight="Medium"
+                                               Foreground="#0F172A" />
+                                    <TextBlock Text="Windows 登录后自动静默常驻系统托盘"
+                                               FontSize="11"
+                                               Foreground="#64748B" />
+                                </StackPanel>
+
+                                <!-- 解决“不知道选中没选中”的醒目状态胶囊 -->
+                                <Border x:Name="BadgeAutoStartStatus"
+                                        Grid.Column="2"
+                                        Background="#DCFCE7"
+                                        CornerRadius="5"
+                                        Padding="8,3"
+                                        VerticalAlignment="Center">
+                                    <TextBlock x:Name="TxtAutoStartStatus"
+                                               Text="✔ 已开启"
+                                               FontSize="11.5"
+                                               FontWeight="Bold"
+                                               Foreground="#15803D" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- 设置项 2: 关闭最小化到托盘 -->
+                        <Border Background="#F8FAFC"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="10,8"
+                                Cursor="Hand"
+                                MouseLeftButtonDown="OnToggleMinimizeToTrayClicked">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox x:Name="ChkMinimizeToTray"
+                                          Grid.Column="0"
+                                          VerticalAlignment="Center"
+                                          IsChecked="True"
+                                          Margin="0,0,8,0"
+                                          Click="OnChkMinimizeToTrayClicked" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="关闭窗口时最小化到系统托盘"
+                                               FontSize="13"
+                                               FontWeight="Medium"
+                                               Foreground="#0F172A" />
+                                    <TextBlock Text="点击右上角关闭时不退出，在托盘保持拦截"
+                                               FontSize="11"
+                                               Foreground="#64748B" />
+                                </StackPanel>
+
+                                <!-- 解决“不知道选中没选中”的醒目状态胶囊 -->
+                                <Border x:Name="BadgeMinimizeStatus"
+                                        Grid.Column="2"
+                                        Background="#DCFCE7"
+                                        CornerRadius="5"
+                                        Padding="8,3"
+                                        VerticalAlignment="Center">
+                                    <TextBlock x:Name="TxtMinimizeStatus"
+                                               Text="✔ 已开启"
+                                               FontSize="11.5"
+                                               FontWeight="Bold"
+                                               Foreground="#15803D" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- 模块 3: 说明与更新日志 (对应原版 richTextBox1 文本区域，升级现代排版) -->
+                <Border Background="#FFFFFF"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="14"
+                        Margin="0,0,0,4">
+                    <StackPanel>
+                        <TextBlock Text="说明与更新日志："
+                                   FontSize="13.5"
+                                   FontWeight="Bold"
+                                   Foreground="#334155"
+                                   Margin="0,0,0,8" />
+
+                        <!-- 内嵌说明盒 (对标原版 richTextBox1，采用浅灰背景盒展示) -->
+                        <Border Background="#F8FAFC"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="12,10">
+                            <StackPanel>
+                                <TextBlock Text="原项目：https://github.com/zhmjx/FuckCalibri"
+                                           FontSize="11.5" Foreground="#64748B" Margin="0,0,0,2" />
+                                <TextBlock Text="本项目：.NET 10 (C# 13, win-x64) 独立单文件版"
+                                           FontSize="11.5" FontWeight="SemiBold" Foreground="#334155" Margin="0,0,0,6" />
+
+                                <Rectangle Height="1" Fill="#E2E8F0" Margin="0,2,0,6" />
+
+                                <TextBlock Text="主要改进与修复记录："
+                                           FontSize="11.5" FontWeight="Bold" Foreground="#334155" Margin="0,0,0,4" />
+                                <TextBlock Text="• 修复已知问题：重构双状态内存特征扫描器，精准判定已生效/未生效，杜绝原版在特征不匹配时的误判。"
+                                           FontSize="11" Foreground="#475569" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                <TextBlock Text="• 架构优化：放弃 OneNote for Windows 10 (UWP) 支持，专精 OneNote 桌面版 (x64)。"
+                                           FontSize="11" Foreground="#475569" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                <TextBlock Text="• 监控升级：引入 Win32 ShellHook 事件监听 (方案 A)，窗口激活瞬间毫秒级自动触发，平时零轮询零能耗。"
+                                           FontSize="11" Foreground="#475569" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                <TextBlock Text="• 启动顺序解耦：支持任意启动时序，可随时在本程序内启动/唤醒 OneNote。"
+                                           FontSize="11" Foreground="#475569" TextWrapping="Wrap" Margin="0,0,0,3" />
+                                <TextBlock Text="• 轻量常驻：最小化至托盘时自动修剪工作集内存至 ~7MB，右键托盘菜单清晰易读。"
+                                           FontSize="11" Foreground="#475569" TextWrapping="Wrap" Margin="0,0,0,6" />
+
+                                <Rectangle Height="1" Fill="#E2E8F0" Margin="0,2,0,6" />
+
+                                <TextBlock Text="支持启动参数："
+                                           FontSize="11.5" FontWeight="Bold" Foreground="#334155" Margin="0,0,0,3" />
+                                <TextBlock Text="• /show   : 程序启动时直接显示主窗口界面。"
+                                           FontSize="11" Foreground="#64748B" Margin="0,0,0,2" />
+                                <TextBlock Text="• /silent : 静默模式常驻托盘，开机自启或重复运行时不弹出主窗体。"
+                                           FontSize="11" Foreground="#64748B" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 底部轻量状态条 (显示内存占用与守护状态) -->
+        <Border Grid.Row="2"
+                Background="#FFFFFF"
+                BorderBrush="#E2E8F0"
+                BorderThickness="0,1,0,0"
+                Padding="16,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse x:Name="DotStatusIndicator" Width="7" Height="7" Fill="#10B981" Margin="0,0,6,0" />
+                    <TextBlock x:Name="TxtBottomStatus"
+                               Text="守护就绪 · 9 处特征码已受保护拦截"
+                               FontSize="11.5"
+                               Foreground="#334155" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtMemoryUsage"
+                               Text="内存: ~7 MB"
+                               FontSize="11"
+                               Foreground="#64748B"
+                               Margin="0,0,10,0" />
+                    <TextBlock Text="FuckCalibri.net v2.0"
+                               FontSize="11"
+                               Foreground="#94A3B8" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</ui:FluentWindow>
