@@ -39,15 +39,18 @@ namespace FuckCalibri
         {
             base.OnSourceInitialized(e);
 
-            _hwnd = new WindowInteropHelper(this).Handle;
+            if (_hwnd == IntPtr.Zero)
+            {
+                _hwnd = new WindowInteropHelper(this).Handle;
 
-            // 挂载 Win32 消息钩子
-            var source = PresentationSource.FromVisual(this) as HwndSource;
-            source?.AddHook(WndProc);
+                // 挂载 Win32 消息钩子
+                var source = PresentationSource.FromVisual(this) as HwndSource;
+                source?.AddHook(WndProc);
 
-            // 注册 Windows Shell 窗口消息钩子 (方案 A)
-            WinApi.RegisterShellHookWindow(_hwnd);
-            _shellHookMsg = WinApi.RegisterWindowMessage("SHELLHOOK");
+                // 注册 Windows Shell 窗口消息钩子 (方案 A)
+                WinApi.RegisterShellHookWindow(_hwnd);
+                _shellHookMsg = WinApi.RegisterWindowMessage("SHELLHOOK");
+            }
         }
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -70,8 +73,20 @@ namespace FuckCalibri
             return IntPtr.Zero;
         }
 
-        private void OnWindowLoaded(object sender, RoutedEventArgs e)
+        private bool _isCoreInitialized = false;
+
+        public void EnsureInitialized()
         {
+            if (_isCoreInitialized) return;
+            _isCoreInitialized = true;
+
+            // 确保底层 Win32 HWND 已创建，保证消息循环与钩子挂载
+            var helper = new WindowInteropHelper(this);
+            if (helper.Handle == IntPtr.Zero)
+            {
+                helper.EnsureHandle();
+            }
+
             // 初始化自启动设置
             var autoStartEnabled = AutoStartManager.IsAutoStartEnabled();
             UpdateAutoStartVisual(autoStartEnabled);
@@ -92,6 +107,11 @@ namespace FuckCalibri
 
             // 初始立即扫描一次
             _patcher.ScanAndPatchNow();
+        }
+
+        private void OnWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            EnsureInitialized();
         }
 
         private void OnWindowStateChanged(object? sender, EventArgs e)
@@ -158,7 +178,7 @@ namespace FuckCalibri
                     TxtRealtimeProtect.Text = "✔ 实时拦截已就绪";
 
                     DotStatusIndicator.Fill = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
-                    TxtBottomStatus.Text = $"守护就绪  OneNote 桌面版 (PID: {state.ProcessId}) · {state.PatchedCount} 处特征码已受保护拦截";
+                    TxtBottomStatus.Text = $"守护就绪  OneNote 桌面版已受保护 (PID: {state.ProcessId})";
 
                     UpdateTrayVisual("green", $"FuckCalibri.net - 已生效 (保护 {state.PatchedCount} 处特征)");
                     break;
@@ -182,7 +202,7 @@ namespace FuckCalibri
                     TxtRealtimeProtect.Text = "⚪ 等待 OneNote 启动";
 
                     DotStatusIndicator.Fill = new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8));
-                    TxtBottomStatus.Text = "待机中  等待 OneNote 启动 (支持任意启动顺序)";
+                    TxtBottomStatus.Text = "待机中  等待 OneNote 启动";
 
                     UpdateTrayVisual("gray", "FuckCalibri.net - OneNote 未运行 (守候中)");
                     break;
@@ -249,6 +269,77 @@ namespace FuckCalibri
                     TxtBottomStatus.Text = $"错误  {state.Message}";
                     UpdateTrayVisual("blue", "FuckCalibri.net - 检测遇到错误");
                     break;
+            }
+
+            // 若注入拦截失败，自动弹窗警示用户
+            CheckAndAlertFailure(state);
+        }
+
+        private int _lastAlertedFailurePid = 0;
+        private PatchStatus _lastAlertedFailureStatus = PatchStatus.NotRunning;
+
+        private void CheckAndAlertFailure(PatchStateInfo state)
+        {
+            if (state.Status == PatchStatus.Patched)
+            {
+                // 成功注入生效，重置失败记录
+                _lastAlertedFailurePid = 0;
+                _lastAlertedFailureStatus = PatchStatus.NotRunning;
+                return;
+            }
+
+            // 正常待机或初始化过渡状态不予弹窗
+            if (state.Status == PatchStatus.NotRunning || state.Status == PatchStatus.WaitingModule || state.Status == PatchStatus.Patching)
+            {
+                return;
+            }
+
+            // 同一 OneNote 实例的同一失败状态只弹窗一次，避免周期轮询时循环弹窗打扰
+            if (state.ProcessId > 0 && (state.ProcessId != _lastAlertedFailurePid || state.Status != _lastAlertedFailureStatus))
+            {
+                _lastAlertedFailurePid = state.ProcessId;
+                _lastAlertedFailureStatus = state.Status;
+
+                string alertTitle = "FuckCalibri.net - 注入拦截失败提醒";
+                string alertContent = "";
+
+                switch (state.Status)
+                {
+                    case PatchStatus.Unsupported:
+                        alertContent = $"【OneNote 字体拦截失败】\n\n" +
+                                       $"已检测到 OneNote 正在运行 (PID: {state.ProcessId})，但在其模块 ({state.ModuleName ?? "onmain.dll"}) 中未匹配到已知的 Calibri 回退特征码。\n\n" +
+                                       $"可能原因：\n" +
+                                       $"1. 当前使用的 OneNote 版本较新或为未适配的分支版本；\n" +
+                                       $"2. 内部排版代码段发生变动，特征码发生偏移。\n\n" +
+                                       $"当前未能成功注入拦截，输入时可能仍会出现字体跳回 Calibri 的现象。";
+                        break;
+
+                    case PatchStatus.AccessDenied:
+                        alertContent = $"【OneNote 内存访问权限不足】\n\n" +
+                                       $"已检测到 OneNote 进程 (PID: {state.ProcessId})，但本程序权限不足，无法访问其进程内存 (Access Denied)。\n\n" +
+                                       $"建议解决方案：\n" +
+                                       $"请尝试以“管理员身份运行” FuckCalibri.net。";
+                        break;
+
+                    case PatchStatus.Error:
+                    default:
+                        alertContent = $"【OneNote 注入拦截异常】\n\n" +
+                                       $"目标进程：ONENOTE.EXE (PID: {state.ProcessId})\n" +
+                                       $"异常信息：{state.Message}\n\n" +
+                                       $"请检查 OneNote 是否卡死或尝试重新检测。";
+                        break;
+                }
+
+                // 弹出模态警示弹窗
+                System.Windows.MessageBox.Show(
+                    alertContent,
+                    alertTitle,
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning
+                );
+
+                // 唤醒主界面至前台以便用户直观核对参数
+                BringToFront();
             }
         }
 

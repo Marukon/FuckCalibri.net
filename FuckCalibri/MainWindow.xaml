@@ -514,7 +514,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Ellipse x:Name="DotStatusIndicator" Width="7" Height="7" Fill="#10B981" Margin="0,0,6,0" />
                     <TextBlock x:Name="TxtBottomStatus"
-                               Text="守护就绪 · 9 处特征码已受保护拦截"
+                               Text="守护就绪 · 实时拦截已生效"
                                FontSize="11.5"
                                Foreground="#334155" />
                 </StackPanel>
