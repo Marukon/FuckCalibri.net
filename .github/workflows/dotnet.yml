@@ -1,28 +1,52 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Build & Release FuckCalibri.net
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
+    tags: [ "v*" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build Single-File Release (win-x64)
+    runs-on: windows-latest
 
-    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Publish
-      run: dotnet publish -c Release
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Display .NET Environment
+        run: dotnet --info
+
+      - name: Restore Dependencies
+        run: dotnet restore FuckCalibri/FuckCalibri.csproj
+
+      - name: Build & Publish Single-File Executable
+        run: dotnet publish FuckCalibri/FuckCalibri.csproj -c Release -r win-x64 --self-contained false -o publish
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FuckCalibri-win-x64
+          path: publish/FuckCalibri.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: publish/FuckCalibri.exe
+          generate_release_notes: true
