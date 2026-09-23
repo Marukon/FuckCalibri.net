@@ -27,6 +27,7 @@
 
         <!-- 任务栏托盘图标 -->
         <tb:TaskbarIcon x:Name="TrayIcon"
+                        IconSource="pack://application:,,,/Resources/fuckcalibri-gray.ico"
                         ToolTipText="FuckCalibri.net - OneNote Calibri 拦截工具"
                         TrayMouseDoubleClick="OnTrayDoubleClicked"
                         TrayLeftMouseDown="OnTrayLeftMouseDown">

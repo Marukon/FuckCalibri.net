@@ -21,6 +21,7 @@ namespace FuckCalibri
         private bool _isExplicitExit = false;
 
         private uint _shellHookMsg = 0;
+        private uint _taskbarCreatedMsg = 0;
         private IntPtr _hwnd = IntPtr.Zero;
 
         public MainWindow()
@@ -42,23 +43,45 @@ namespace FuckCalibri
             if (_hwnd == IntPtr.Zero)
             {
                 _hwnd = new WindowInteropHelper(this).Handle;
+            }
 
-                // 挂载 Win32 消息钩子
-                var source = PresentationSource.FromVisual(this) as HwndSource;
-                source?.AddHook(WndProc);
+            // 挂载 Win32 消息钩子 (使用 HwndSource.FromHwnd 确保窗口未 Show 时也能稳定挂钩)
+            var source = HwndSource.FromHwnd(_hwnd) ?? PresentationSource.FromVisual(this) as HwndSource;
+            if (source != null)
+            {
+                source.RemoveHook(WndProc);
+                source.AddHook(WndProc);
+            }
 
-                // 注册 Windows Shell 窗口消息钩子 (方案 A)
-                WinApi.RegisterShellHookWindow(_hwnd);
-                _shellHookMsg = WinApi.RegisterWindowMessage("SHELLHOOK");
+            // 注册 Windows Shell 窗口消息钩子 (方案 A)
+            WinApi.RegisterShellHookWindow(_hwnd);
+            _shellHookMsg = WinApi.RegisterWindowMessage("SHELLHOOK");
+            if (_shellHookMsg > 0)
+            {
+                WinApi.ChangeWindowMessageFilter(_shellHookMsg, WinApi.MSGFLT_ADD);
+            }
+
+            // 注册 Windows TaskbarCreated 消息 (开机 Explorer 就绪或重启时自动恢复托盘图标)
+            _taskbarCreatedMsg = WinApi.RegisterWindowMessage("TaskbarCreated");
+            if (_taskbarCreatedMsg > 0)
+            {
+                WinApi.ChangeWindowMessageFilter(_taskbarCreatedMsg, WinApi.MSGFLT_ADD);
             }
         }
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (SingleInstanceHelper.ReactToNotification && SingleInstanceHelper.IsMutexMessage(msg))
+            if (SingleInstanceHelper.IsMutexMessage(msg))
             {
                 handled = true;
                 Dispatcher.InvokeAsync(BringToFront);
+                return IntPtr.Zero;
+            }
+
+            // Windows 任务栏重建或就绪 (Explorer 启动/重启)，重新强制创建托盘图标
+            if (_taskbarCreatedMsg > 0 && msg == (int)_taskbarCreatedMsg)
+            {
+                Dispatcher.InvokeAsync(EnsureTrayIconCreated);
                 return IntPtr.Zero;
             }
 
@@ -87,6 +110,12 @@ namespace FuckCalibri
                 helper.EnsureHandle();
             }
 
+            // 强制创建系统托盘图标 (尤其在开机静默 /silent 启动未调用 Show() 时必须显式 ForceCreate)
+            EnsureTrayIconCreated();
+
+            // 启动开机托盘图标守候保活任务 (防范开机阶段 Explorer 任务栏就绪延迟)
+            StartTrayIconKeepAlive();
+
             // 初始化自启动设置
             var autoStartEnabled = AutoStartManager.IsAutoStartEnabled();
             UpdateAutoStartVisual(autoStartEnabled);
@@ -107,6 +136,48 @@ namespace FuckCalibri
 
             // 初始立即扫描一次
             _patcher.ScanAndPatchNow();
+        }
+
+        public void EnsureTrayIconCreated()
+        {
+            try
+            {
+                if (!TrayIcon.IsCreated)
+                {
+                    TrayIcon.ForceCreate();
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[FuckCalibri] TrayIcon.ForceCreate failed: {ex.Message}");
+            }
+        }
+
+        private void StartTrayIconKeepAlive()
+        {
+            Task.Run(async () =>
+            {
+                // 在启动初期重试若干次，应对开机阶段 Explorer.exe 托盘未就绪问题
+                for (int i = 0; i < 8; i++)
+                {
+                    await Task.Delay(1500);
+                    bool created = false;
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        if (!TrayIcon.IsCreated)
+                        {
+                            try
+                            {
+                                TrayIcon.ForceCreate();
+                            }
+                            catch { }
+                        }
+                        created = TrayIcon.IsCreated;
+                    });
+
+                    if (created) break;
+                }
+            });
         }
 
         private void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -363,6 +434,15 @@ namespace FuckCalibri
             }
 
             TrayIcon.ToolTipText = tooltip;
+
+            if (!TrayIcon.IsCreated)
+            {
+                try
+                {
+                    TrayIcon.ForceCreate();
+                }
+                catch { }
+            }
         }
 
         private void UpdateMemoryUsageDisplay()

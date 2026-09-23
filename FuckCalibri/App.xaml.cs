@@ -58,8 +58,8 @@ namespace FuckCalibri
             }
             else
             {
-                // 开机自启动静默模式：直接在托盘常驻，主动修剪工作集内存至 ~7MB
-                WinApi.TrimWorkingSet();
+                // 开机自启动静默模式：直接在托盘常驻，在空闲就绪后主动修剪工作集内存至 ~7MB
+                Dispatcher.InvokeAsync(WinApi.TrimWorkingSet, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             }
         }
 

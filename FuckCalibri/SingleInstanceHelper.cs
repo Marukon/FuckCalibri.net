@@ -18,10 +18,13 @@ namespace FuckCalibri {
         public static bool ReactToNotification { get; private set; }
 
         public static void Check(bool silent = false) {
-            ReactToNotification = !silent;
+            ReactToNotification = true;
 
             const string appGuid = "FuckCalibri_WPF_Net10_AppInstance_Guid_2026";
             _mutexMessage = WinApi.RegisterWindowMessage(appGuid);
+            if (_mutexMessage > 0) {
+                WinApi.ChangeWindowMessageFilter(_mutexMessage, WinApi.MSGFLT_ADD);
+            }
 
             _mutex = new Mutex(true, $"Global\\{appGuid}", out bool createNew);
             IsSingleInstance = createNew;

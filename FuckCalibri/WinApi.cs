@@ -30,6 +30,12 @@ namespace FuckCalibri {
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern uint RegisterWindowMessage(string lpString);
 
+        public const uint MSGFLT_ADD = 1;
+        public const uint MSGFLT_REMOVE = 2;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool ChangeWindowMessageFilter(uint message, uint dwFlag);
+
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
